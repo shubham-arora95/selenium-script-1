@@ -17,7 +17,7 @@ import org.testng.annotations.Test;
 
 import com.sun.corba.se.impl.oa.poa.ActiveObjectMap.Key;
 
-public class DesiDimeCopier {
+public class DesiDimeCopierNew {
 	public WebDriver driver = null;
 	public JavascriptExecutor js = null;
 	public WebDriverWait wait = null;
