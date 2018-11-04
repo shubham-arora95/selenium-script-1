@@ -95,6 +95,7 @@ public class RunAutomatedJob {
 		String imageURL = null;
 		String dealPercentage = null;
 		StringBuffer features = new StringBuffer();
+		String couponDiscount = null;
 		WebElement oldPriceElement = getElementIfExist(
 				"#price > table > tbody > tr:nth-child(1) > td.a-span12.a-color-secondary.a-size-base > span.a-text-strike",
 				css);
@@ -120,35 +121,39 @@ public class RunAutomatedJob {
 			}
 		}
 
+		WebElement applyCouponDom = getElementIfExist("//*[@id=\"vpcButton\"]/div/label/span", xpath);
+
+		if (applyCouponDom != null) {
+			couponDiscount = applyCouponDom.getText();
+		}
+
 		if (getElementIfExist("goldboxBuyBox", id) != null) {
 			specialDealType = lightningDeal;
-			
+
 			long dealPercentageDomSize = 0;
-			dealPercentageDomSize = (Long) js.executeScript("return document.getElementsByClassName('a-size-small a-color-base a-text-bold').length");
-			
-			if(dealPercentageDomSize > 0) {
-				dealPercentage = (String) js.executeScript("return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[0].innerText;");
+			dealPercentageDomSize = (Long) js.executeScript(
+					"return document.getElementsByClassName('a-size-small a-color-base a-text-bold').length");
+
+			if (dealPercentageDomSize > 0 && couponDiscount != null) {
+				dealPercentage = (String) js.executeScript(
+						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[1].innerText;");
+			} else {
+				dealPercentage = (String) js.executeScript(
+						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[0].innerText;");
 			}
 		}
-		
-		/*
-		 * if (null != oldPrice && null != newPrice) { oldPrice =
-		 * oldPrice.replaceAll(",", ""); newPrice = newPrice.replaceAll(",", "");
-		 * oldPriceValue = Double.parseDouble(oldPrice); newPriceValue =
-		 * Double.parseDouble(newPrice); } else { throw new Exception(); }
-		 */
 
-		String affilateLink = baseUrl;//fetchAffilateLink();
+		String affilateLink = baseUrl;// fetchAffilateLink();
 
 		WebElement titleElement = getElementIfExist("productTitle", id);
 		if (titleElement != null) {
 			actualTitle = titleElement.getText();
 		}
-		
+
 		try {
 			Thread.sleep(1000);
 		} catch (Exception e) {
-			
+
 		}
 		WebElement imageURLElement = getElementIfExist("//*[@id=\"landingImage\"]", xpath);
 
@@ -186,6 +191,7 @@ public class RunAutomatedJob {
 		mapToReturn.put(specialDealKey, specialDealType);
 		mapToReturn.put("imageURL", imageURL);
 		mapToReturn.put("dealPercentage", dealPercentage);
+		mapToReturn.put("couponDiscount", couponDiscount);
 		return mapToReturn;
 	}
 
@@ -274,19 +280,6 @@ public class RunAutomatedJob {
 			}
 
 			keywordTextField.sendKeys(titleToSearch);
-
-			/*
-			 * if (actualTitle.split(" ").length >= 4) {
-			 * keywordTextField.sendKeys(actualTitle.split(" ")[0] + " " +
-			 * actualTitle.split(" ")[1] + " " + actualTitle.split(" ")[2] + " " +
-			 * actualTitle.split(" ")[3]); } else if (actualTitle.split(" ").length >= 3) {
-			 * keywordTextField.sendKeys( actualTitle.split(" ")[0] + " " +
-			 * actualTitle.split(" ")[1] + " " + actualTitle.split(" ")[2]); } else if
-			 * (actualTitle.contains("-")) {
-			 * keywordTextField.sendKeys(actualTitle.split("-")[0]); } else {
-			 * keywordTextField.sendKeys(actualTitle); }
-			 */
-
 		}
 
 		WebElement searchButton = getElementIfExist(
@@ -333,7 +326,7 @@ public class RunAutomatedJob {
 		WebElement offerOldPriceTextField = getElementIfExist("//*[@id=\"rehub_offer_product_price_old\"]", xpath);
 		WebElement offerSalePriceTextField = getElementIfExist("//*[@id=\"rehub_offer_product_price\"]", xpath);
 		if (null != offerOldPriceTextField && null != offerSalePriceTextField) {
-			if (oldPriceValue != 0) {
+			if (oldPriceValue != 0 && oldPriceValue != newPriceValue) {
 				offerOldPriceTextField.sendKeys("&#8377; " + oldPriceValue);
 			}
 			if (newPrice == null) {
@@ -346,20 +339,16 @@ public class RunAutomatedJob {
 		WebElement imageURLElement = getElementIfExist("knawatfibu_url", id);
 		if (null != imageURLElement && null != returnMap.get("imageURL")) {
 			js.executeScript("document.getElementById('knawatfibu_url').value = '" + returnMap.get("imageURL") + "'");
-			// imageURLElement.sendKeys(returnMap.get("imageURL"));
 		}
 
-		if(returnMap.get(specialDealKey) != null && returnMap.get(specialDealKey).equalsIgnoreCase(lightningDeal)) {
+		if (returnMap.get(specialDealKey) != null && returnMap.get(specialDealKey).equalsIgnoreCase(lightningDeal)) {
 			js.executeScript("document.getElementsByName('rehub_post_side[is_editor_choice]')[3].click();");
 		}
-		// Commented adding expiration date
-		/*
-		 * if (returnMap.get(specialDealKey) != null &&
-		 * returnMap.get(specialDealKey).equalsIgnoreCase(lightningDeal)) { String
-		 * pattern = "yyyy-MM-dd"; SimpleDateFormat simpleDateFormat = new
-		 * SimpleDateFormat(pattern); String date = simpleDateFormat.format(new Date());
-		 * getElementIfExist("rehub_offer_coupon_date", id).sendKeys(date); }
-		 */
+
+		if (returnMap.get("couponDiscount") != null) {
+			js.executeScript("document.getElementById('rehub_offer_product_coupon').value = '"
+					+ returnMap.get("couponDiscount") + "'");
+		}
 	}
 
 	public void signOutFromAmazon() {
@@ -367,14 +356,14 @@ public class RunAutomatedJob {
 	}
 
 	public void postOnTelegram(Map<String, String> returnMap) {
-		
+
 		try {
 			// Select Yes on Auto Publish
 			js.executeScript("document.getElementsByName('afap_auto_post')[0].value='yes'");
 		} catch (Exception e) {
 			// TODO: handle exception
 		}
-		
+
 		Double oldPriceValue = (double) 0;
 		Double newPriceValue = (double) 0;
 		String newPrice = null;
@@ -391,18 +380,24 @@ public class RunAutomatedJob {
 		}
 		String actualTitle = returnMap.get("postTitle");
 		String newTitle = null;
+		newTitle = newTitle.replaceAll("\'", "'");
 		if (newPrice == null) {
-			newTitle = /* "Buy " + */"*"+ actualTitle + " at Rs. " + newPriceValue.intValue() + " @ Amazon";
+			newTitle = /* "Buy " + */"*" + actualTitle + " at Rs. " + newPriceValue.intValue() + " @ Amazon";
 		} else {
-			newTitle = /* "Buy " + */"*"+ actualTitle + " at Rs. " + newPrice + " @ Amazon";
+			newTitle = /* "Buy " + */"*" + actualTitle + " at Rs. " + newPrice + " @ Amazon";
 		}
 
 		if (returnMap.get(specialDealKey) != null && returnMap.get(specialDealKey).equalsIgnoreCase(lightningDeal)) {
-			if(returnMap.get("dealPercentage") != null) {
-				newTitle = "*(Lightning Deal! "+ returnMap.get("dealPercentage") + " Claimed Grab Fast!!)* \n\n" + newTitle;
+			if (returnMap.get("dealPercentage") != null) {
+				newTitle = "*(Lightning Deal! " + returnMap.get("dealPercentage") + " Claimed Grab Fast!!)* \n\n"
+						+ newTitle;
 			} else {
 				newTitle = "*(Lightning Deal!) Grab Fast!!* \n\n" + newTitle;
 			}
+		}
+		
+		if(null != returnMap.get("couponDiscount")) {
+			newTitle = newTitle + " + " +  returnMap.get("couponDiscount");
 		}
 
 		newTitle = newTitle + " (Original Price Rs. " + oldPriceValue.intValue() + ")*";
@@ -469,27 +464,26 @@ public class RunAutomatedJob {
 		WebElement postTitle = getElementIfExist("post_title", name);
 		if (null != postTitle) {
 			try {
-				js.executeScript("document.getElementsByName('post_title')[0].value = '" + newTitle +"'");
-			}catch(Exception e) {
+				js.executeScript("document.getElementsByName('post_title')[0].value = '" + newTitle + "'");
+			} catch (Exception e) {
 				postTitle.sendKeys(newTitle);
 			}
-			
-		}
-		
-		//js.executeScript("document.getElementsByName('post_title')[0].value = '" + newTitle +"'");
 
-		
-		
+		}
+
+		// js.executeScript("document.getElementsByName('post_title')[0].value = '" +
+		// newTitle +"'");
+
 		WebElement contentHTML = getElementIfExist("content-html", id);
 		if (null != contentHTML) {
 			clickElement(contentHTML);
 		}
 
-		/*WebElement bodyElement = getElementIfExist("wp-editor-area", className);
-		if (null != bodyElement) {
-			bodyElement.sendKeys(features);
-		}*/
-		
+		/*
+		 * WebElement bodyElement = getElementIfExist("wp-editor-area", className); if
+		 * (null != bodyElement) { bodyElement.sendKeys(features); }
+		 */
+
 		try {
 			js.executeScript("document.getElementsByClassName('wp-editor-area')[0].value = '" + features + "'");
 		} catch (Exception e) {
@@ -498,11 +492,9 @@ public class RunAutomatedJob {
 				bodyElement.sendKeys(features);
 			}
 		}
-		
-		
 
 		// Adding Content Egg
-		//addContentEggInPost(actualTitle);
+		// addContentEggInPost(actualTitle);
 		addPostAttributes(returnMap);
 
 		WebElement publishButton = getElementIfExist("publish", id);
@@ -573,8 +565,8 @@ public class RunAutomatedJob {
 		wait = new WebDriverWait(driver, 20);
 
 		driver.manage().window().maximize();
-		//driver.get(baseUrl);
-		//loginIntoAmazon("rohanmadaan.1997@gmail.com", "123456123#abc");
+		// driver.get(baseUrl);
+		// loginIntoAmazon("rohanmadaan.1997@gmail.com", "123456123#abc");
 
 		driver.get(newPostUrl);
 		logIntoBlog("shubham", "shambhu2");

@@ -131,6 +131,7 @@ public class DesiDimeCopierNew {
 		String imageURL = null;
 		String dealPercentage = null;
 		StringBuffer features = new StringBuffer();
+		String couponDiscount = null;
 		WebElement oldPriceElement = getElementIfExist(
 				"#price > table > tbody > tr:nth-child(1) > td.a-span12.a-color-secondary.a-size-base > span.a-text-strike",
 				css);
@@ -156,6 +157,12 @@ public class DesiDimeCopierNew {
 			}
 		}
 
+		WebElement applyCouponDom = getElementIfExist("//*[@id=\"vpcButton\"]/div/label/span", xpath);
+
+		if (applyCouponDom != null) {
+			couponDiscount = applyCouponDom.getText();
+		}
+
 		if (getElementIfExist("goldboxBuyBox", id) != null) {
 			specialDealType = lightningDeal;
 
@@ -163,7 +170,10 @@ public class DesiDimeCopierNew {
 			dealPercentageDomSize = (Long) js.executeScript(
 					"return document.getElementsByClassName('a-size-small a-color-base a-text-bold').length");
 
-			if (dealPercentageDomSize > 0) {
+			if (dealPercentageDomSize > 0 && couponDiscount != null) {
+				dealPercentage = (String) js.executeScript(
+						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[1].innerText;");
+			} else {
 				dealPercentage = (String) js.executeScript(
 						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[0].innerText;");
 			}
@@ -217,6 +227,7 @@ public class DesiDimeCopierNew {
 		mapToReturn.put(specialDealKey, specialDealType);
 		mapToReturn.put("imageURL", imageURL);
 		mapToReturn.put("dealPercentage", dealPercentage);
+		mapToReturn.put("couponDiscount", couponDiscount);
 		return mapToReturn;
 	}
 
@@ -397,6 +408,11 @@ public class DesiDimeCopierNew {
 		if (returnMap.get(specialDealKey) != null && returnMap.get(specialDealKey).equalsIgnoreCase(lightningDeal)) {
 			js.executeScript("document.getElementsByName('rehub_post_side[is_editor_choice]')[3].click();");
 		}
+		
+		if (returnMap.get("couponDiscount") != null) {
+			js.executeScript("document.getElementById('rehub_offer_product_coupon').value = '"
+					+ returnMap.get("couponDiscount") + "'");
+		}
 	}
 
 	public void addContentEggInPost(String actualTitle) throws Exception {
@@ -470,6 +486,7 @@ public class DesiDimeCopierNew {
 		}
 		String actualTitle = returnMap.get("postTitle");
 		String newTitle = null;
+		actualTitle = actualTitle.replaceAll("\'", "'");
 		if (newPrice == null) {
 			newTitle = /* "Buy " + */"*" + actualTitle + " at Rs. " + newPriceValue.intValue() + " @ Amazon";
 		} else {
@@ -483,6 +500,10 @@ public class DesiDimeCopierNew {
 			} else {
 				newTitle = "*(Lightning Deal!) Grab Fast!!* \n\n" + newTitle;
 			}
+		}
+		
+		if(null != returnMap.get("couponDiscount")) {
+			newTitle = newTitle + " + " +  returnMap.get("couponDiscount");
 		}
 
 		newTitle = newTitle + " (Original Price Rs. " + oldPriceValue.intValue() + ")*";
