@@ -35,11 +35,15 @@ public class DesiDimeCopier {
 	String firstAmazonDealTitle = "";
 
 	static {
-		postsList.add("Healthgenie Epsom Salt for Relaxation and Pain Relief - 800 g");
+		postsList.add("Altavista Crafted Top Solid Wood Coffee Table (Brown) for 999");
 	}
 
 	@Test
 	public void f() {
+		
+		if(!postsList.isEmpty()) {
+			System.out.println(postsList.get(postsList.size() - 1));
+		}
 
 		driver.get(desiDimeURL);
 		ArrayList<WebElement> allDeals = (ArrayList<WebElement>) js
@@ -74,14 +78,12 @@ public class DesiDimeCopier {
 						break;
 					}*/
 				}
-				previousFirstDealTitle = firstAmazonDealTitle;
 
 				try {
 					Thread.sleep(30000);
 				} catch (Exception e) {
 					// TODO: handle exception
 				}
-				System.out.println(previousFirstDealTitle);
 				f();
 			} catch (Exception e) {
 				previousFirstDealTitle = firstAmazonDealTitle;

@@ -31,11 +31,11 @@ public class DesiDimeCopierNew {
 	String specialDealKey = "specialDealKey";
 	static ArrayList<String> postsList = new ArrayList<String>();
 	String previousFirstDealTitle = "[58% off] Syska Ionic Function HD 3600I Hair Dryer and Ionic HS 2021I Hair St...";
-	String newPostUrl = "http://nonstopdeals.in/wp-admin/post-new.php";
+	String newPostUrl = "https://nonstopdeals.in/wp-admin/post-new.php";
 	String firstAmazonDealTitle = "";
 
 	static {
-		postsList.add("Healthgenie Epsom Salt for Relaxation and Pain Relief - 800 g");
+		postsList.add("Head & Shoulders Cool Menthol Shampoo, 1L @ 348/-");
 	}
 
 	@Test
@@ -562,10 +562,14 @@ public class DesiDimeCopierNew {
 				.keyDown(Keys.SHIFT).click(desiDimeLink).keyUp(Keys.CONTROL).keyUp(Keys.SHIFT).perform();
 
 		ArrayList<String> tabs = new ArrayList(driver.getWindowHandles());
+		String postTitle = null;
+		String amazonLinkHref = null;
 		try {
 			driver.switchTo().window(tabs.get(1));
+			postTitle = driver.findElement(By.cssSelector("#deal-detail-like-dislike-container > div > div.grid-100.tablet-grid-100.grid-parent.gutter-bottom > div.grid-45.tablet-grid-45.grid-parent > h1")).getText();
 			WebElement amazonLink = driver.findElement(By.cssSelector(
 					"#deal-detail-like-dislike-container > div > div.grid-100.tablet-grid-100.grid-parent.gutter-bottom > div.grid-55.tablet-grid-55.grid-parent > div:nth-child(2) > a"));
+			amazonLinkHref = amazonLink.getAttribute("href");
 			postDeal(amazonLink.getAttribute("href"));
 
 			// driver.get("http://google.com");
@@ -575,13 +579,13 @@ public class DesiDimeCopierNew {
 			// previousFirstDealTitle = firstAmazonDealTitle;
 			//System.out.println("Can't Post " + amazonLink.getText());
 			try {
-				String linkText = desiDimeLink.getText();
-				String amazonLink = desiDimeLink.getAttribute("href");
+				String linkText = postTitle;
+				String amazonLink = amazonLinkHref;
 				driver.get(amazonLink);
 				String affilatedLink = fetchAffilateLink();
 				sendOnlyMessageOnTelegram(linkText, affilatedLink);
 			} catch (Exception e2) {
-				// TODO: handle exception
+				System.out.println("Can't post - " + postTitle);
 			}
 			driver.close();
 			driver.switchTo().window(tabs.get(0));
