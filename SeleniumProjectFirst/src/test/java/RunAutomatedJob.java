@@ -134,10 +134,10 @@ public class RunAutomatedJob {
 			dealPercentageDomSize = (Long) js.executeScript(
 					"return document.getElementsByClassName('a-size-small a-color-base a-text-bold').length");
 
-			if (dealPercentageDomSize > 0 && couponDiscount != null) {
+			if (dealPercentageDomSize > 1 && couponDiscount != null) {
 				dealPercentage = (String) js.executeScript(
 						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[1].innerText;");
-			} else {
+			} else if(dealPercentageDomSize > 0) {
 				dealPercentage = (String) js.executeScript(
 						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[0].innerText;");
 			}

@@ -30,10 +30,10 @@ public class IFSCopier {
 	String lightningDeal = "LightningDeal";
 	String specialDealKey = "specialDealKey";
 	static ArrayList<String> postsList = new ArrayList<String>();
-	String newPostUrl = "http://localhost:70/wordpress/wp-admin/post-new.php";
+	String newPostUrl = "https://nonstopdeals.in/wp-admin/post-new.php";
 
 	static {
-		postsList.add("Head & Shoulders Cool Menthol Shampoo, 1L @ 348/-");
+		postsList.add("Himalaya Herbals Chyavanaprasha - 500 g Rs. 95 - Amazon ");
 	}
 
 	@Test
@@ -44,7 +44,9 @@ public class IFSCopier {
 				"return document.getElementsByClassName('product-list')[0].getElementsByClassName('product-item');");
 		ArrayList<WebElement> amazonDeals = new ArrayList<WebElement>();
 		for (int i = 0; i < allDeals.size(); i++) {
-			if (allDeals.get(i).getAttribute("innerHTML").contains("Amazon")) {
+			if (allDeals.get(i).findElement(By.className("product-footer"))
+					.findElement(By.className("logo-shop-now")).findElement(By.tagName("a")).getAttribute("href")
+					.contains("amazon")) {
 				amazonDeals.add(allDeals.get(i));
 			}
 		}
@@ -62,6 +64,8 @@ public class IFSCopier {
 								.getAttribute("href");
 						String ifsTitle = amazonDeals.get(i).findElements(By.tagName("a")).get(1).getText();
 						postDesiDimeDeal(amazonLink, ifsTitle);
+					} else {
+						break;
 					}
 				}
 
@@ -92,7 +96,7 @@ public class IFSCopier {
 		wait = new WebDriverWait(driver, 20);
 		driver.manage().window().maximize();
 		try {
-			loginIntoAmazon("allpdfnotes@gmail.com", "shambhu2");
+			loginIntoAmazon("rohanmadaan.1997@gmail.com", "123456123#abc");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -118,6 +122,7 @@ public class IFSCopier {
 		String imageURL = null;
 		String dealPercentage = null;
 		StringBuffer features = new StringBuffer();
+		String couponDiscount = null;
 		WebElement oldPriceElement = getElementIfExist(
 				"#price > table > tbody > tr:nth-child(1) > td.a-span12.a-color-secondary.a-size-base > span.a-text-strike",
 				css);
@@ -143,6 +148,12 @@ public class IFSCopier {
 			}
 		}
 
+		WebElement applyCouponDom = getElementIfExist("//*[@id=\"vpcButton\"]/div/label/span", xpath);
+
+		if (applyCouponDom != null) {
+			couponDiscount = applyCouponDom.getText();
+		}
+
 		if (getElementIfExist("goldboxBuyBox", id) != null) {
 			specialDealType = lightningDeal;
 
@@ -150,10 +161,18 @@ public class IFSCopier {
 			dealPercentageDomSize = (Long) js.executeScript(
 					"return document.getElementsByClassName('a-size-small a-color-base a-text-bold').length");
 
-			if (dealPercentageDomSize > 0) {
-				dealPercentage = (String) js.executeScript(
-						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[0].innerText;");
-			}
+			/*
+			 * if (dealPercentageDomSize > 1 && couponDiscount != null) { dealPercentage =
+			 * (String) js.executeScript(
+			 * "return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[1].innerText;"
+			 * ); } else if (dealPercentageDomSize > 0) { dealPercentage = (String)
+			 * js.executeScript(
+			 * "return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[0].innerText;"
+			 * ); }
+			 */
+
+			dealPercentage = driver.findElement(By.id("goldboxBuyBox")).findElement(By.className("a-section"))
+					.findElement(By.className("a-row")).findElements(By.className("a-size-small")).get(0).getText();
 		}
 
 		String affilateLink = fetchAffilateLink();
@@ -204,6 +223,7 @@ public class IFSCopier {
 		mapToReturn.put(specialDealKey, specialDealType);
 		mapToReturn.put("imageURL", imageURL);
 		mapToReturn.put("dealPercentage", dealPercentage);
+		mapToReturn.put("couponDiscount", couponDiscount);
 		return mapToReturn;
 	}
 
@@ -384,6 +404,11 @@ public class IFSCopier {
 		if (returnMap.get(specialDealKey) != null && returnMap.get(specialDealKey).equalsIgnoreCase(lightningDeal)) {
 			js.executeScript("document.getElementsByName('rehub_post_side[is_editor_choice]')[3].click();");
 		}
+
+		if (returnMap.get("couponDiscount") != null) {
+			js.executeScript("document.getElementById('rehub_offer_product_coupon').value = '"
+					+ returnMap.get("couponDiscount") + "'");
+		}
 	}
 
 	public void addContentEggInPost(String actualTitle) throws Exception {
@@ -457,6 +482,7 @@ public class IFSCopier {
 		}
 		String actualTitle = returnMap.get("postTitle");
 		String newTitle = null;
+		actualTitle = actualTitle.replaceAll("'", "");
 		if (newPrice == null) {
 			newTitle = /* "Buy " + */"*" + actualTitle + " at Rs. " + newPriceValue.intValue() + " @ Amazon";
 		} else {
@@ -472,7 +498,15 @@ public class IFSCopier {
 			}
 		}
 
-		newTitle = newTitle + " (Original Price Rs. " + oldPriceValue.intValue() + ")*";
+		if (oldPriceValue.intValue() != 0) {
+			newTitle = newTitle + " (Original Price Rs. " + oldPriceValue.intValue() + ")*";
+		} else {
+			newTitle = newTitle + "*";
+		}
+
+		if (null != returnMap.get("couponDiscount")) {
+			newTitle = newTitle + "\n\n + " + returnMap.get("couponDiscount");
+		}
 
 		WebElement postOnTelCheckBox = getElementIfExist("telegram_m_send", id);
 		clickElement(postOnTelCheckBox);
@@ -544,10 +578,13 @@ public class IFSCopier {
 	}
 
 	public void postDesiDimeDeal(String ifsAmazonLink, String ifsTitle) throws Exception {
-		//Actions actionOpenLinkInNewTab = new Actions(driver);
+		// Actions actionOpenLinkInNewTab = new Actions(driver);
 		js.executeScript("window.open('', '_blank');");
-		/*actionOpenLinkInNewTab.keyDown(Keys.CONTROL) // MacOS: Keys.COMMAND
-				.keyDown(Keys.).click(ifsLink).keyUp(Keys.CONTROL).keyUp(Keys.SHIFT).perform();*/
+		/*
+		 * actionOpenLinkInNewTab.keyDown(Keys.CONTROL) // MacOS: Keys.COMMAND
+		 * .keyDown(Keys.).click(ifsLink).keyUp(Keys.CONTROL).keyUp(Keys.SHIFT).perform(
+		 * );
+		 */
 
 		ArrayList<String> tabs = new ArrayList(driver.getWindowHandles());
 		String postTitle = null;
@@ -580,7 +617,7 @@ public class IFSCopier {
 	}
 
 	public void sendOnlyMessageOnTelegram(String linkText, String affilatedLink) {
-		driver.get("http://localhost:70/wordpress/wp-admin/admin.php?page=telegram_send");
+		driver.get("https://nonstopdeals.in/wp-admin/admin.php?page=telegram_send");
 		WebElement textArea = getElementIfExist("telegram_new_message", name);
 		textArea.sendKeys("*" + linkText + "*\n\n");
 		textArea.sendKeys(affilatedLink);
