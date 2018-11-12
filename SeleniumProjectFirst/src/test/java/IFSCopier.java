@@ -31,59 +31,65 @@ public class IFSCopier {
 	String specialDealKey = "specialDealKey";
 	static ArrayList<String> postsList = new ArrayList<String>();
 	String newPostUrl = "https://nonstopdeals.in/wp-admin/post-new.php";
+	// public String newPostUrl =
+	// "http://localhost:70/wordpress/wp-admin/post-new.php";
 
 	static {
-		postsList.add("Himalaya Herbals Chyavanaprasha - 500 g Rs. 95 - Amazon ");
+		postsList.add("AmazonBasics New iPad Pro 2017 Smart Case Rs. 189 - Amazon");
 	}
 
 	@Test
 	public void f() {
 
-		driver.get(ifsURL);
-		ArrayList<WebElement> allDeals = (ArrayList<WebElement>) js.executeScript(
-				"return document.getElementsByClassName('product-list')[0].getElementsByClassName('product-item');");
-		ArrayList<WebElement> amazonDeals = new ArrayList<WebElement>();
-		for (int i = 0; i < allDeals.size(); i++) {
-			if (allDeals.get(i).findElement(By.className("product-footer"))
-					.findElement(By.className("logo-shop-now")).findElement(By.tagName("a")).getAttribute("href")
-					.contains("amazon")) {
-				amazonDeals.add(allDeals.get(i));
-			}
-		}
-
-		if (!amazonDeals.isEmpty()) {
-			// firstAmazonDealTitle =
-			// (amazonDeals.get(0).findElements(By.tagName("a"))).get(3).getText();
-			try {
-				for (int i = 0; i < amazonDeals.size(); i++) {
-
-					if (!(postsList.contains(amazonDeals.get(i).findElements(By.tagName("a")).get(1).getText()))) {
-						postsList.add(amazonDeals.get(i).findElements(By.tagName("a")).get(1).getText());
-						String amazonLink = amazonDeals.get(i).findElement(By.className("product-footer"))
-								.findElement(By.className("logo-shop-now")).findElement(By.className("btn-shopnow"))
-								.getAttribute("href");
-						String ifsTitle = amazonDeals.get(i).findElements(By.tagName("a")).get(1).getText();
-						postDesiDimeDeal(amazonLink, ifsTitle);
-					} else {
-						break;
-					}
+		try {
+			driver.get(ifsURL);
+			ArrayList<WebElement> allDeals = (ArrayList<WebElement>) js.executeScript(
+					"return document.getElementsByClassName('product-list')[0].getElementsByClassName('product-item');");
+			ArrayList<WebElement> amazonDeals = new ArrayList<WebElement>();
+			for (int i = 0; i < allDeals.size(); i++) {
+				if (allDeals.get(i).findElement(By.className("product-footer"))
+						.findElement(By.className("logo-shop-now")).findElement(By.tagName("a")).getAttribute("href")
+						.contains("amazon")) {
+					amazonDeals.add(allDeals.get(i));
 				}
+			}
 
+			if (!amazonDeals.isEmpty()) {
+				// firstAmazonDealTitle =
+				// (amazonDeals.get(0).findElements(By.tagName("a"))).get(3).getText();
+				try {
+					for (int i = 0; i < amazonDeals.size(); i++) {
+
+						if (!(postsList.contains(amazonDeals.get(i).findElements(By.tagName("a")).get(1).getText()))) {
+							postsList.add(amazonDeals.get(i).findElements(By.tagName("a")).get(1).getText());
+							String amazonLink = amazonDeals.get(i).findElement(By.className("product-footer"))
+									.findElement(By.className("logo-shop-now")).findElement(By.className("btn-shopnow"))
+									.getAttribute("href");
+							String ifsTitle = amazonDeals.get(i).findElements(By.tagName("a")).get(1).getText();
+							postIFSDeal(amazonLink, ifsTitle);
+						} else {
+							break;
+						}
+					}
+
+					try {
+						Thread.sleep(30000);
+					} catch (Exception e) {
+						// TODO: handle exception
+					}
+					f();
+				} catch (Exception e) {
+					f();
+				}
+			} else {
 				try {
 					Thread.sleep(30000);
 				} catch (Exception e) {
 					// TODO: handle exception
 				}
 				f();
-			} catch (Exception e) {
-				f();
 			}
-		} else {
-			try {
-				Thread.sleep(30000);
-			} catch (Exception e) {
-				// TODO: handle exception
-			}
+		} catch (Exception e) {
 			f();
 		}
 	}
@@ -97,6 +103,7 @@ public class IFSCopier {
 		driver.manage().window().maximize();
 		try {
 			loginIntoAmazon("rohanmadaan.1997@gmail.com", "123456123#abc");
+			// loginIntoAmazon("allpdfnotes@gmail.com", "shambhu2");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -115,8 +122,6 @@ public class IFSCopier {
 		Map<String, String> mapToReturn = new HashMap<String, String>();
 		String oldPrice = null;
 		String newPrice = null;
-		Double oldPriceValue = null;
-		Double newPriceValue = null;
 		String actualTitle = null;
 		String specialDealType = null;
 		String imageURL = null;
@@ -161,18 +166,13 @@ public class IFSCopier {
 			dealPercentageDomSize = (Long) js.executeScript(
 					"return document.getElementsByClassName('a-size-small a-color-base a-text-bold').length");
 
-			/*
-			 * if (dealPercentageDomSize > 1 && couponDiscount != null) { dealPercentage =
-			 * (String) js.executeScript(
-			 * "return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[1].innerText;"
-			 * ); } else if (dealPercentageDomSize > 0) { dealPercentage = (String)
-			 * js.executeScript(
-			 * "return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[0].innerText;"
-			 * ); }
-			 */
-
-			dealPercentage = driver.findElement(By.id("goldboxBuyBox")).findElement(By.className("a-section"))
-					.findElement(By.className("a-row")).findElements(By.className("a-size-small")).get(0).getText();
+			if (dealPercentageDomSize > 1 && couponDiscount != null) {
+				dealPercentage = (String) js.executeScript(
+						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[1].innerText;");
+			} else if (dealPercentageDomSize > 0) {
+				dealPercentage = (String) js.executeScript(
+						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[0].innerText;");
+			}
 		}
 
 		String affilateLink = fetchAffilateLink();
@@ -215,6 +215,29 @@ public class IFSCopier {
 		if (null != newPrice) {
 			newPrice = newPrice.replaceAll(",", "");
 		}
+
+		/**
+		 * Start Minus the discount coupon
+		 */
+		if (!newPrice.contains("-")) {
+			if (couponDiscount != null) {
+				String couponValue = couponDiscount.split(" ")[1];
+				if (couponValue.charAt(couponValue.length() - 1) == '%') {
+					couponValue = couponValue.split("%")[0];
+					Double newPriceValue = Double.parseDouble(newPrice);
+					newPriceValue = newPriceValue - (newPriceValue * Double.parseDouble(couponValue) / 100);
+					newPrice = newPriceValue.toString();
+				} else {
+					Double newPriceValue = Double.parseDouble(newPrice);
+					newPriceValue = newPriceValue - Double.parseDouble(couponValue);
+					newPrice = newPriceValue.toString();
+				}
+			}
+
+		}
+		/**
+		 * End Minus the discount coupon
+		 */
 		mapToReturn.put("oldPrice", oldPrice);
 		mapToReturn.put("newPrice", newPrice);
 		mapToReturn.put("postTitle", actualTitle);
@@ -386,14 +409,18 @@ public class IFSCopier {
 		WebElement offerOldPriceTextField = getElementIfExist("//*[@id=\"rehub_offer_product_price_old\"]", xpath);
 		WebElement offerSalePriceTextField = getElementIfExist("//*[@id=\"rehub_offer_product_price\"]", xpath);
 		if (null != offerOldPriceTextField && null != offerSalePriceTextField) {
-			if (oldPriceValue != 0) {
-				offerOldPriceTextField.sendKeys("&#8377; " + oldPriceValue);
-			}
 			if (newPrice == null) {
-				offerSalePriceTextField.sendKeys("&#8377; " + newPriceValue);
+				offerSalePriceTextField.sendKeys("&#8377; " + newPriceValue.intValue());
+				if (oldPriceValue.intValue() == newPriceValue.intValue()) {
+					oldPriceValue = (double) 0;
+				}
 			} else {
 				offerSalePriceTextField.sendKeys("&#8377; " + newPrice);
 			}
+			if (oldPriceValue != 0) {
+				offerOldPriceTextField.sendKeys("&#8377; " + oldPriceValue.intValue());
+			}
+
 		}
 
 		WebElement imageURLElement = getElementIfExist("knawatfibu_url", id);
@@ -498,14 +525,15 @@ public class IFSCopier {
 			}
 		}
 
-		if (oldPriceValue.intValue() != 0) {
+		if (oldPriceValue.intValue() != 0 && newPriceValue != 0
+				&& oldPriceValue.intValue() != newPriceValue.intValue()) {
 			newTitle = newTitle + " (Original Price Rs. " + oldPriceValue.intValue() + ")*";
 		} else {
 			newTitle = newTitle + "*";
 		}
 
 		if (null != returnMap.get("couponDiscount")) {
-			newTitle = newTitle + "\n\n + " + returnMap.get("couponDiscount");
+			newTitle = newTitle + "\n\n " + returnMap.get("couponDiscount");
 		}
 
 		WebElement postOnTelCheckBox = getElementIfExist("telegram_m_send", id);
@@ -570,21 +598,15 @@ public class IFSCopier {
 		}
 	}
 
-	public void postDeal(String amazonURL) throws Exception {
+	public void postDealWrapper(String amazonURL) throws Exception {
 		driver.get(amazonURL);
 		Map<String, String> returnMap = getFieldsFromAmazon();
 		boolean dealPosted = postDeal(returnMap);
 		postOnTelegram(returnMap);
 	}
 
-	public void postDesiDimeDeal(String ifsAmazonLink, String ifsTitle) throws Exception {
-		// Actions actionOpenLinkInNewTab = new Actions(driver);
+	public void postIFSDeal(String ifsAmazonLink, String ifsTitle) throws Exception {
 		js.executeScript("window.open('', '_blank');");
-		/*
-		 * actionOpenLinkInNewTab.keyDown(Keys.CONTROL) // MacOS: Keys.COMMAND
-		 * .keyDown(Keys.).click(ifsLink).keyUp(Keys.CONTROL).keyUp(Keys.SHIFT).perform(
-		 * );
-		 */
 
 		ArrayList<String> tabs = new ArrayList(driver.getWindowHandles());
 		String postTitle = null;
@@ -593,18 +615,20 @@ public class IFSCopier {
 			driver.switchTo().window(tabs.get(1));
 			postTitle = ifsTitle;
 			amazonLinkHref = ifsAmazonLink;
-			postDeal(amazonLinkHref);
+			postDealWrapper(amazonLinkHref);
 
-			// driver.get("http://google.com");
 			driver.close();
 			driver.switchTo().window(tabs.get(0));
 		} catch (Exception e) {
-			// previousFirstDealTitle = firstAmazonDealTitle;
-			// System.out.println("Can't Post " + amazonLink.getText());
 			try {
 				String linkText = postTitle;
 				String amazonLink = amazonLinkHref;
 				driver.get(amazonLink);
+				if (driver.findElements(By.cssSelector("#availability > span")).size() > 0
+						&& driver.findElements(By.cssSelector("#availability > span")).get(0).getText()
+								.contains("Currently unavailable")) {
+					throw new Exception();
+				}
 				String affilatedLink = fetchAffilateLink();
 				sendOnlyMessageOnTelegram(linkText, affilatedLink);
 			} catch (Exception e2) {

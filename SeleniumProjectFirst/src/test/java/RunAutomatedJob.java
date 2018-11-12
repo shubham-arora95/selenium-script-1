@@ -19,8 +19,8 @@ import org.testng.annotations.Test;
 public class RunAutomatedJob {
 	public String baseUrl = "https://goo.gl/mD6fv2";
 	String driverPath = "C:\\geckodriver.exe";
-	public String blogUrl = "http://nonstopdeals.in/wp-admin";
-	public String newPostUrl = "http://nonstopdeals.in/wp-admin/post-new.php";
+	// public String newPostUrl = "http://nonstopdeals.in/wp-admin/post-new.php";
+	public String newPostUrl = "http://localhost:70/wordpress/wp-admin/post-new.php";
 	public WebDriver driver = null;
 	public JavascriptExecutor js = null;
 	public WebDriverWait wait = null;
@@ -88,8 +88,6 @@ public class RunAutomatedJob {
 		Map<String, String> mapToReturn = new HashMap<String, String>();
 		String oldPrice = null;
 		String newPrice = null;
-		Double oldPriceValue = null;
-		Double newPriceValue = null;
 		String actualTitle = null;
 		String specialDealType = null;
 		String imageURL = null;
@@ -137,7 +135,7 @@ public class RunAutomatedJob {
 			if (dealPercentageDomSize > 1 && couponDiscount != null) {
 				dealPercentage = (String) js.executeScript(
 						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[1].innerText;");
-			} else if(dealPercentageDomSize > 0) {
+			} else if (dealPercentageDomSize > 0) {
 				dealPercentage = (String) js.executeScript(
 						"return document.getElementsByClassName('a-size-small a-color-base a-text-bold')[0].innerText;");
 			}
@@ -183,6 +181,29 @@ public class RunAutomatedJob {
 		if (null != newPrice) {
 			newPrice = newPrice.replaceAll(",", "");
 		}
+
+		/**
+		 * Start Minus the discount coupon
+		 */
+		if (!newPrice.contains("-")) {
+			if (couponDiscount != null) {
+				String couponValue = couponDiscount.split(" ")[1];
+				if (couponValue.charAt(couponValue.length() - 1) == '%') {
+					couponValue = couponValue.split("%")[0];
+					Double newPriceValue = Double.parseDouble(newPrice);
+					newPriceValue = newPriceValue - (newPriceValue * Double.parseDouble(couponValue) / 100);
+					newPrice = newPriceValue.toString();
+				} else {
+					Double newPriceValue = Double.parseDouble(newPrice);
+					newPriceValue = newPriceValue - Double.parseDouble(couponValue);
+					newPrice = newPriceValue.toString();
+				}
+			}
+
+		}
+		/**
+		 * End Minus the discount coupon
+		 */
 		mapToReturn.put("oldPrice", oldPrice);
 		mapToReturn.put("newPrice", newPrice);
 		mapToReturn.put("postTitle", actualTitle);
@@ -380,7 +401,7 @@ public class RunAutomatedJob {
 		}
 		String actualTitle = returnMap.get("postTitle");
 		String newTitle = null;
-		newTitle = newTitle.replaceAll("\'", "'");
+		actualTitle = actualTitle.replaceAll("'", "");
 		if (newPrice == null) {
 			newTitle = /* "Buy " + */"*" + actualTitle + " at Rs. " + newPriceValue.intValue() + " @ Amazon";
 		} else {
@@ -395,12 +416,16 @@ public class RunAutomatedJob {
 				newTitle = "*(Lightning Deal!) Grab Fast!!* \n\n" + newTitle;
 			}
 		}
-		
-		if(null != returnMap.get("couponDiscount")) {
-			newTitle = newTitle + " + " +  returnMap.get("couponDiscount");
+
+		if (oldPriceValue.intValue() != 0) {
+			newTitle = newTitle + " (Original Price Rs. " + oldPriceValue.intValue() + ")*";
+		} else {
+			newTitle = newTitle + "*";
 		}
 
-		newTitle = newTitle + " (Original Price Rs. " + oldPriceValue.intValue() + ")*";
+		if (null != returnMap.get("couponDiscount")) {
+			newTitle = newTitle + "\n\n + " + returnMap.get("couponDiscount");
+		}
 
 		WebElement postOnTelCheckBox = getElementIfExist("telegram_m_send", id);
 		clickElement(postOnTelCheckBox);
@@ -448,18 +473,7 @@ public class RunAutomatedJob {
 			newTitle = /* "Buy " + */actualTitle + " at Rs. " + newPrice + " @ Amazon";
 		}
 
-		/*
-		 * if (oldPriceValue == 0 && newPriceValue == 0) {
-		 * System.out.println("Cannot post deal - Price not found"); throw new
-		 * Exception(); }
-		 */
-
-		// driver.get(blogUrl);
-
 		driver.get(newPostUrl);
-
-		// wait.until(ExpectedConditions.presenceOfElementLocated(By.id("user_login")));
-		// logIntoBlog("shubham", "shambhu2");
 
 		WebElement postTitle = getElementIfExist("post_title", name);
 		if (null != postTitle) {
