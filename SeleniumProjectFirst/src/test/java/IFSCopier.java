@@ -1,3 +1,4 @@
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +13,7 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
@@ -31,11 +33,14 @@ public class IFSCopier {
 	String specialDealKey = "specialDealKey";
 	static ArrayList<String> postsList = new ArrayList<String>();
 	String newPostUrl = "https://nonstopdeals.in/wp-admin/post-new.php";
+	String admitadFlipkart = "https://ad.admitad.com/g/rb1qie435bc91b4d8bc4a80d05f527/?ulp=";
 	// public String newPostUrl =
 	// "http://localhost:70/wordpress/wp-admin/post-new.php";
 
 	static {
-		postsList.add("AmazonBasics New iPad Pro 2017 Smart Case Rs. 189 - Amazon");
+		postsList.add("Ethics Men's Footwear 50% to 70% off from Rs. 119 - Amazon");
+		postsList.add("[Extra Rs. 4000 off on Exchange] Vivo Y83 Pro 64gb Rs. 13990 - Flipkart");
+		// postsList.add("Jack Jones Blazers Min 60% off from Rs. 1259 @ Flipkart");
 	}
 
 	@Test
@@ -46,17 +51,20 @@ public class IFSCopier {
 			ArrayList<WebElement> allDeals = (ArrayList<WebElement>) js.executeScript(
 					"return document.getElementsByClassName('product-list')[0].getElementsByClassName('product-item');");
 			ArrayList<WebElement> amazonDeals = new ArrayList<WebElement>();
+			ArrayList<WebElement> flipkartDeals = new ArrayList<WebElement>();
 			for (int i = 0; i < allDeals.size(); i++) {
 				if (allDeals.get(i).findElement(By.className("product-footer"))
 						.findElement(By.className("logo-shop-now")).findElement(By.tagName("a")).getAttribute("href")
 						.contains("amazon")) {
 					amazonDeals.add(allDeals.get(i));
+				} else if (allDeals.get(i).findElement(By.className("product-footer"))
+						.findElement(By.className("logo-shop-now")).findElement(By.tagName("a")).getAttribute("href")
+						.contains("flipkart")) {
+					flipkartDeals.add(allDeals.get(i));
 				}
 			}
 
 			if (!amazonDeals.isEmpty()) {
-				// firstAmazonDealTitle =
-				// (amazonDeals.get(0).findElements(By.tagName("a"))).get(3).getText();
 				try {
 					for (int i = 0; i < amazonDeals.size(); i++) {
 
@@ -71,24 +79,36 @@ public class IFSCopier {
 							break;
 						}
 					}
-
-					try {
-						Thread.sleep(30000);
-					} catch (Exception e) {
-						// TODO: handle exception
-					}
-					f();
 				} catch (Exception e) {
-					f();
+					throw e;
 				}
-			} else {
-				try {
-					Thread.sleep(30000);
-				} catch (Exception e) {
-					// TODO: handle exception
-				}
-				f();
 			}
+			if (false/*!flipkartDeals.isEmpty()*/) {
+				try {
+					for (int i = 0; i < flipkartDeals.size(); i++) {
+
+						if (!(postsList
+								.contains(flipkartDeals.get(i).findElements(By.tagName("a")).get(1).getText()))) {
+							postsList.add(flipkartDeals.get(i).findElements(By.tagName("a")).get(1).getText());
+							String flipkartLink = flipkartDeals.get(i).findElement(By.className("product-footer"))
+									.findElement(By.className("logo-shop-now")).findElement(By.className("btn-shopnow"))
+									.getAttribute("href");
+							String ifsTitle = flipkartDeals.get(i).findElements(By.tagName("a")).get(1).getText();
+							postIFSFlipkartDeal(flipkartLink, ifsTitle);
+						} else {
+							break;
+						}
+					}
+				} catch (Exception e) {
+					throw e;
+				}
+			}
+			try {
+				Thread.sleep(30000);
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+			f();
 		} catch (Exception e) {
 			f();
 		}
@@ -118,7 +138,7 @@ public class IFSCopier {
 		driver.findElement(By.id("wp-submit")).click();
 	}
 
-	public Map<String, String> getFieldsFromAmazon() throws Exception {
+	public Map<String, String> getFieldsFromAmazon(String amazonURL) throws Exception {
 		Map<String, String> mapToReturn = new HashMap<String, String>();
 		String oldPrice = null;
 		String newPrice = null;
@@ -175,8 +195,6 @@ public class IFSCopier {
 			}
 		}
 
-		String affilateLink = fetchAffilateLink();
-
 		WebElement titleElement = getElementIfExist("productTitle", id);
 		if (titleElement != null) {
 			actualTitle = titleElement.getText();
@@ -187,6 +205,18 @@ public class IFSCopier {
 		} catch (Exception e) {
 
 		}
+
+		int count = 1;
+		String affilateLink = fetchAffilateLink();
+		while ((affilateLink == null || affilateLink.length() < 5) && count < 3) {
+			driver.get(amazonURL);
+			affilateLink = fetchAffilateLink();
+			count++;
+		}
+		if (count == 3 && (affilateLink == null || affilateLink.length() < 5)) {
+			throw new Exception();
+		}
+
 		WebElement imageURLElement = getElementIfExist("//*[@id=\"landingImage\"]", xpath);
 
 		if (imageURLElement != null) {
@@ -600,7 +630,7 @@ public class IFSCopier {
 
 	public void postDealWrapper(String amazonURL) throws Exception {
 		driver.get(amazonURL);
-		Map<String, String> returnMap = getFieldsFromAmazon();
+		Map<String, String> returnMap = getFieldsFromAmazon(amazonURL);
 		boolean dealPosted = postDeal(returnMap);
 		postOnTelegram(returnMap);
 	}
@@ -629,7 +659,16 @@ public class IFSCopier {
 								.contains("Currently unavailable")) {
 					throw new Exception();
 				}
+				int count = 1;
 				String affilatedLink = fetchAffilateLink();
+				while ((affilatedLink == null || affilatedLink.length() < 5) && count < 3) {
+					driver.get(amazonLink);
+					affilatedLink = fetchAffilateLink();
+					count++;
+				}
+				if (count == 3 && (affilatedLink == null || affilatedLink.length() < 5)) {
+					throw e;
+				}
 				sendOnlyMessageOnTelegram(linkText, affilatedLink);
 			} catch (Exception e2) {
 				System.out.println("Can't post - " + postTitle);
@@ -640,6 +679,138 @@ public class IFSCopier {
 		}
 	}
 
+	public void postDealOnFlipkartWrapper(String flipkartURL) throws Exception {
+		driver.get(flipkartURL);
+		Map<String, String> returnMap = getAttributesFromFlipkart();
+		boolean dealPosted = postDeal(returnMap);
+		postOnTelegram(returnMap);
+	}
+
+	public void postIFSFlipkartDeal(String ifsFlipkartLink, String ifsTitle) throws Exception {
+
+		js.executeScript("window.open('', '_blank');");
+
+		ArrayList<String> tabs = new ArrayList(driver.getWindowHandles());
+		String postTitle = null;
+		String flipkartLinkHref = null;
+		try {
+			driver.switchTo().window(tabs.get(1));
+			postTitle = ifsTitle;
+			flipkartLinkHref = ifsFlipkartLink;
+			postDealOnFlipkartWrapper(flipkartLinkHref);
+
+			driver.close();
+			driver.switchTo().window(tabs.get(0));
+		} catch (Exception e) {
+			try {
+				String linkText = postTitle;
+				String flipkartLink = ifsFlipkartLink;
+				driver.get(flipkartLink);
+				/*js.executeScript(
+						"document.onreadystatechange=function(){if(window.location.hostname.indexOf('www.flipkart.com')<0)return void alert('Please try on any Flipkart Page');var e=document.getElementsByClassName('fk_affiliate_id');e.length>0&&e[0].parentNode.removeChild(e[0]);var t=document.createElement('div');t.className='fk_affiliate_id',t.id='vishalkum20',document.body.appendChild(t);var e=document.getElementsByClassName('bkm_script');e.length>0&&e[0].parentNode.removeChild(e[0]);var a=document.createElement('script');a.src='https://affiliate-static.flixcart.net/affiliate/website/bookmarklet/fkBookmark.min.js?v'+parseInt(99999999*Math.random()),a['class']='bkm_script',document.body.appendChild(a)}();");
+				try {
+					Thread.sleep(2000);
+				} catch (Exception e2) {
+					// TODO: handle exception
+				}*/
+				try {
+					/*
+					 * String affilateLink = (String) js
+					 * .executeScript("return document.getElementsByClassName('copyBox')[0].value");
+					 */
+					String currentURL = driver.getCurrentUrl();
+					currentURL = URLEncoder.encode(currentURL, "UTF-8");
+					String affilateLink = admitadFlipkart + currentURL;
+					driver.get("https://tinyurl.com/");
+					js.executeScript("document.getElementById('url').value = '" + affilateLink + "'");
+					js.executeScript("document.getElementById('submit').click()");
+					String tinyURLLink = (String) js
+							.executeScript("return document.getElementsByTagName('b')[1].innerText");
+					sendOnlyMessageOnTelegram(linkText, tinyURLLink);
+				} catch (Exception e2) {
+					throw new Exception();
+				}
+
+			} catch (Exception e2) {
+				System.out.println("Can't post Flipkart Post - " + postTitle);
+			}
+			driver.close();
+			driver.switchTo().window(tabs.get(0));
+			// throw e;
+		}
+
+	}
+
+	private Map<String, String> getAttributesFromFlipkart() throws Exception {
+		Map<String, String> mapToReturn = new HashMap<String, String>();
+		String oldPrice = null;
+		String newPrice = null;
+		String actualTitle = null;
+		String imageURL = null;
+		String affilateLink = null;
+		String currentURL = null;
+		StringBuffer features = new StringBuffer();
+		
+		try {
+			Thread.sleep(2000);
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
+
+		oldPrice = (String) js.executeScript("return document.getElementsByClassName('_3auQ3N _1POkHg')[0].innerText");
+		newPrice = (String) js.executeScript("return document.getElementsByClassName('_1vC4OE _3qQ9m1')[0].innerText");
+		actualTitle = (String) js.executeScript("return document.getElementsByClassName('_35KyD6')[0].innerText");
+		imageURL = (String) js.executeScript(
+				"return document.getElementsByClassName('_1Nyybr Yun65Y _30XEf0')[0].getAttribute('src')");
+
+		// affilateLink = fetchFlipkartAffilateLink();
+		features.append((String) js.executeScript("return document.getElementsByClassName('_3WHvuP')[0].innerText"));
+		features.insert(0, "<ul><li>");
+		features.append("</li></ul>");
+		while (features.indexOf("\n") != -1) {
+			int index = features.indexOf("\n");
+			features.replace(index, index + 1, "</li><li>");
+		}
+
+		oldPrice = oldPrice.replaceAll(",", "");
+		newPrice = newPrice.replaceAll(",", "");
+		oldPrice = oldPrice.substring(1, oldPrice.length());
+		newPrice = newPrice.substring(1, newPrice.length());
+		currentURL = driver.getCurrentUrl();
+
+		affilateLink = admitadFlipkart + currentURL;
+
+		mapToReturn.put("oldPrice", oldPrice);
+		mapToReturn.put("newPrice", newPrice);
+		mapToReturn.put("postTitle", actualTitle);
+		mapToReturn.put("features", features.toString());
+		mapToReturn.put("imageURL", imageURL);
+		mapToReturn.put("affilateLink", affilateLink);
+		return mapToReturn;
+	}
+
+	private String fetchFlipkartAffilateLink() throws Exception {
+		try {
+			js.executeScript(
+					"document.onreadystatechange=function(){if(window.location.hostname.indexOf('www.flipkart.com')<0)return void alert('Please try on any Flipkart Page');var e=document.getElementsByClassName('fk_affiliate_id');e.length>0&&e[0].parentNode.removeChild(e[0]);var t=document.createElement('div');t.className='fk_affiliate_id',t.id='vishalkum20',document.body.appendChild(t);var e=document.getElementsByClassName('bkm_script');e.length>0&&e[0].parentNode.removeChild(e[0]);var a=document.createElement('script');a.src='https://affiliate-static.flixcart.net/affiliate/website/bookmarklet/fkBookmark.min.js?v'+parseInt(99999999*Math.random()),a['class']='bkm_script',document.body.appendChild(a)}();");
+			try {
+				Thread.sleep(2000);
+			} catch (Exception e2) {
+				// TODO: handle exception
+			}
+			try {
+				String affilateLink = (String) js
+						.executeScript("return document.getElementsByClassName('copyBox')[0].value");
+				return affilateLink;
+			} catch (Exception e) {
+				throw e;
+			}
+		} catch (Exception e) {
+			throw e;
+		}
+
+	}
+
 	public void sendOnlyMessageOnTelegram(String linkText, String affilatedLink) {
 		driver.get("https://nonstopdeals.in/wp-admin/admin.php?page=telegram_send");
 		WebElement textArea = getElementIfExist("telegram_new_message", name);
@@ -647,6 +818,11 @@ public class IFSCopier {
 		textArea.sendKeys(affilatedLink);
 		WebElement sendNowButton = getElementIfExist("submit", id);
 		sendNowButton.click();
+	}
+
+	@AfterTest
+	public void afterTest() {
+		System.out.println(postsList.get(postsList.size() - 1));
 	}
 
 }
