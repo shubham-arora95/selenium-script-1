@@ -74,6 +74,7 @@ public class IFSCopier {
 									.findElement(By.className("logo-shop-now")).findElement(By.className("btn-shopnow"))
 									.getAttribute("href");
 							String ifsTitle = amazonDeals.get(i).findElements(By.tagName("a")).get(1).getText();
+							//String ifsOriginalPrice = amazonDeals.get(i).findElements(By.className("old-price")).get(1).getText();
 							postIFSDeal(amazonLink, ifsTitle);
 						} else {
 							break;
@@ -122,7 +123,7 @@ public class IFSCopier {
 		wait = new WebDriverWait(driver, 20);
 		driver.manage().window().maximize();
 		try {
-			loginIntoAmazon("rohanmadaan.1997@gmail.com", "123456123#abc");
+			loginIntoAmazon("rohanmadaan.1997@gmail.com", "NONSTOPDEALS@1322");
 			// loginIntoAmazon("allpdfnotes@gmail.com", "shambhu2");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -138,7 +139,7 @@ public class IFSCopier {
 		driver.findElement(By.id("wp-submit")).click();
 	}
 
-	public Map<String, String> getFieldsFromAmazon(String amazonURL) throws Exception {
+	public Map<String, String> getFieldsFromAmazon(String amazonURL, String ifsTitle) throws Exception {
 		Map<String, String> mapToReturn = new HashMap<String, String>();
 		String oldPrice = null;
 		String newPrice = null;
@@ -214,6 +215,7 @@ public class IFSCopier {
 			count++;
 		}
 		if (count == 3 && (affilateLink == null || affilateLink.length() < 5)) {
+			sendOnlyMessageOnTelegram(ifsTitle, driver.getCurrentUrl(), null, null);
 			throw new Exception();
 		}
 
@@ -306,7 +308,7 @@ public class IFSCopier {
 
 	public void loginIntoAmazon(String username, String password) throws Exception {
 		driver.get("https://amazon.in");
-		WebElement signInHover = getElementIfExist("nav-link-yourAccount", id);
+		WebElement signInHover = getElementIfExist("//*[@id=\"nav-link-yourAccount\"]", xpath);
 		if (signInHover != null) {
 			clickElement(signInHover);
 		}
@@ -628,11 +630,12 @@ public class IFSCopier {
 		}
 	}
 
-	public void postDealWrapper(String amazonURL) throws Exception {
+	public void postDealWrapper(String amazonURL, String ifsTitle) throws Exception {
 		driver.get(amazonURL);
-		Map<String, String> returnMap = getFieldsFromAmazon(amazonURL);
+		Map<String, String> returnMap = getFieldsFromAmazon(amazonURL, ifsTitle);
+		sendOnlyMessageOnTelegram(ifsTitle, returnMap.get("affilateLink"), returnMap.get("oldPrice"), returnMap.get("couponDiscount"));
 		boolean dealPosted = postDeal(returnMap);
-		postOnTelegram(returnMap);
+		//postOnTelegram(returnMap);
 	}
 
 	public void postIFSDeal(String ifsAmazonLink, String ifsTitle) throws Exception {
@@ -645,7 +648,7 @@ public class IFSCopier {
 			driver.switchTo().window(tabs.get(1));
 			postTitle = ifsTitle;
 			amazonLinkHref = ifsAmazonLink;
-			postDealWrapper(amazonLinkHref);
+			postDealWrapper(amazonLinkHref, ifsTitle);
 
 			driver.close();
 			driver.switchTo().window(tabs.get(0));
@@ -667,9 +670,10 @@ public class IFSCopier {
 					count++;
 				}
 				if (count == 3 && (affilatedLink == null || affilatedLink.length() < 5)) {
+					sendOnlyMessageOnTelegram(linkText, driver.getCurrentUrl(), null, null);
 					throw e;
 				}
-				sendOnlyMessageOnTelegram(linkText, affilatedLink);
+				sendOnlyMessageOnTelegram(linkText, affilatedLink, null, null);
 			} catch (Exception e2) {
 				System.out.println("Can't post - " + postTitle);
 			}
@@ -726,7 +730,7 @@ public class IFSCopier {
 					js.executeScript("document.getElementById('submit').click()");
 					String tinyURLLink = (String) js
 							.executeScript("return document.getElementsByTagName('b')[1].innerText");
-					sendOnlyMessageOnTelegram(linkText, tinyURLLink);
+					sendOnlyMessageOnTelegram(linkText, tinyURLLink, null, null);
 				} catch (Exception e2) {
 					throw new Exception();
 				}
@@ -811,10 +815,19 @@ public class IFSCopier {
 
 	}
 
-	public void sendOnlyMessageOnTelegram(String linkText, String affilatedLink) {
+	public void sendOnlyMessageOnTelegram(String linkText, String affilatedLink, String originalPrice, String dealPercentage) {
 		driver.get("https://nonstopdeals.in/wp-admin/admin.php?page=telegram_send");
 		WebElement textArea = getElementIfExist("telegram_new_message", name);
 		textArea.sendKeys("*" + linkText + "*\n\n");
+		
+		if(null != originalPrice) {
+			textArea.sendKeys("MRP Rs. " + originalPrice.trim() + "\n\n");
+		}
+		
+		if(null != dealPercentage) {
+			textArea.sendKeys(dealPercentage +"\n\n");
+		}
+		
 		textArea.sendKeys(affilatedLink);
 		WebElement sendNowButton = getElementIfExist("submit", id);
 		sendNowButton.click();
