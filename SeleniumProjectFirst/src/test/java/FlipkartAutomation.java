@@ -1,5 +1,7 @@
 import org.testng.annotations.Test;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
@@ -281,7 +283,7 @@ public class FlipkartAutomation {
 		System.setProperty("webdriver.chrome.driver", "C:\\Users\\Shubham Arora\\Downloads\\chromedriver.exe");
 		driver = new ChromeDriver();
 		js = (JavascriptExecutor) driver;
-		wait = new WebDriverWait(driver, 20);
+		wait = new WebDriverWait(driver,  java.time.Duration.ofSeconds(20));
 
 		driver.manage().window().maximize();
 

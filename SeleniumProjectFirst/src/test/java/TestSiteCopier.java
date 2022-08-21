@@ -1,4 +1,6 @@
 import java.net.URLEncoder;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -117,7 +119,7 @@ public class TestSiteCopier {
 		System.setProperty("webdriver.chrome.driver", "C:\\Users\\Shubham Arora\\Downloads\\chromedriver.exe");
 		driver = new ChromeDriver();
 		js = (JavascriptExecutor) driver;
-		wait = new WebDriverWait(driver, 20);
+		wait = new WebDriverWait(driver, java.time.Duration.ofSeconds(20));
 		driver.manage().window().maximize();
 		try {
 			// loginIntoAmazon("rohanmadaan.1997@gmail.com", "onlinebachat@1322");
@@ -299,7 +301,7 @@ public class TestSiteCopier {
 
 		try {
 			if (shortURL) {
-				affilateLink = URLShortnerUtil.shortURL(affilateLink);
+				//affilateLink = URLShortnerUtil.shortURL(affilateLink);
 			}
 		} catch (Exception e) {
 			// Do Nothing

@@ -1,3 +1,5 @@
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +17,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import com.sun.corba.se.impl.oa.poa.ActiveObjectMap.Key;
+
 
 public class DesiDimeCopier {
 	public WebDriver driver = null;
@@ -104,7 +106,7 @@ public class DesiDimeCopier {
 		System.setProperty("webdriver.chrome.driver", "C:\\Users\\Shubham Arora\\Downloads\\chromedriver.exe");
 		driver = new ChromeDriver();
 		js = (JavascriptExecutor) driver;
-		wait = new WebDriverWait(driver, 20);
+		wait = new WebDriverWait(driver, java.time.Duration.ofSeconds(20));
 		driver.manage().window().maximize();
 		try {
 			loginIntoAmazon("rohanmadaan.1997@gmail.com", "123456123#abc");

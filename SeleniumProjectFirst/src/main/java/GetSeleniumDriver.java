@@ -6,7 +6,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 public class GetSeleniumDriver {
 	private static WebDriver driver = new ChromeDriver();
 	private static JavascriptExecutor js = (JavascriptExecutor) driver;
-	private static WebDriverWait wait = new WebDriverWait(driver, 20);
+	private static WebDriverWait wait = new WebDriverWait(driver, java.time.Duration.ofSeconds(20));
 
 	public static JavascriptExecutor getJs() {
 		return js;

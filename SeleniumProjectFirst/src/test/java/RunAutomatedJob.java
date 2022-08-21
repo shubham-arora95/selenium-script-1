@@ -1,4 +1,6 @@
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -576,7 +578,7 @@ public class RunAutomatedJob {
 		System.setProperty("webdriver.chrome.driver", "C:\\Users\\Shubham Arora\\Downloads\\chromedriver.exe");
 		driver = new ChromeDriver();
 		js = (JavascriptExecutor) driver;
-		wait = new WebDriverWait(driver, 20);
+		wait = new WebDriverWait(driver,  java.time.Duration.ofSeconds(20));
 
 		driver.manage().window().maximize();
 		// driver.get(baseUrl);
